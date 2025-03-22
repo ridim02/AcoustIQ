@@ -1,6 +1,13 @@
-const db = require('../db');
+const db = require('../db/db');
 
 // Basic CRUD operations for User
+
+async function listUsers(page = 1, limit = 10) {
+    const offset = (page - 1) * limit;
+    const query = `SELECT * FROM users ORDER BY id LIMIT $1 OFFSET $2`;
+    const { rows } = await db.query(query, [limit, offset]);
+    return rows;
+}
 
 async function CreateUser(data) {
     const { first_name, last_name, email, password, role } = data;

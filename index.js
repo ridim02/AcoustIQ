@@ -3,7 +3,6 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const url = require('url');
-const querystring = require('querystring');
 
 const authRepository = require('./repositories/authRepository');
 
@@ -22,6 +21,17 @@ function serveStaticFile(res, filePath, contentType) {
   });
 }
 
+function parseCookies(cookieHeader) {
+  const cookies = {};
+  if (cookieHeader) {
+    cookieHeader.split(';').forEach(cookie => {
+      const [key, value] = cookie.trim().split('=');
+      cookies[key] = decodeURIComponent(value);
+    });
+  }
+  return cookies;
+}
+
 const server = http.createServer(async (req, res) => {
   const parsedUrl = url.parse(req.url);
 
@@ -36,6 +46,15 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (parsedUrl.pathname === '/' || parsedUrl.pathname === '/login') {
+      const cookies = parseCookies(req.headers.cookie);
+      const token = cookies.token;
+      if (token) {
+        try {
+          await authRepository.verifyToken(token);
+          res.writeHead(302, { Location: '/dashboard' });
+          return res.end();
+        } catch {}
+      }
       return serveStaticFile(res, path.join(__dirname, 'views', 'login.html'), 'text/html');
     }
     if (parsedUrl.pathname === '/register') {

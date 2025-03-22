@@ -13,7 +13,6 @@ async function register(data) {
         if (!password) throw new Error("Password is required");
 
         const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-        console.log("Hashed password:", hashedPassword);
         
         const query = `INSERT INTO users (first_name, last_name, email, password, role) VALUES ($1, $2, $3, $4, $5) RETURNING id, email, role;`;
         const { rows } = await db.query(query, [first_name, last_name, email, hashedPassword, role]);
