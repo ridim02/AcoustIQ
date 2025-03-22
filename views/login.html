@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AcoustIQ - Login</title>
+    <link rel="stylesheet" href="../public/css/styles.css">
+</head>
+<body>
+    <div class="form-container">
+        <h2 class="form-title">AcoustIQ Login</h2>
+        <form id="loginForm" method="post">
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required class="input-field">
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required class="input-field">
+        </div>
+        <button type="submit" class="submit-button">Login</button>
+        </form>
+        <p class="redirect-link">Don't have an account? <a href="/register">Register</a></p>
+    </div>
+    <script src="/public/js/login.js"></script>
+</body>
+</html>

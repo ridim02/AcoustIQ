@@ -1,0 +1,25 @@
+{
+  "name": "acoustiq",
+  "version": "1.0.0",
+  "description": "A Simple Admin panel to manage records of artists with their songs collection",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ridim02/AcoustIQ.git"
+  },
+  "author": "Rhydam Shrestha",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ridim02/AcoustIQ/issues"
+  },
+  "homepage": "https://github.com/ridim02/AcoustIQ#readme",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.4.7",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.14.1"
+  }
+}

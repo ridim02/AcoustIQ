@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>AcoustIQ - Register</title>
+    <link rel="stylesheet" href="../public/css/styles.css">
+</head>
+<body>
+    <div class="form-container">
+        <h2 class="form-title">AcoustIQ Registration</h2>
+        <form id="registerForm" method="post">
+        <div class="form-group">
+            <label for="first_name">First Name</label>
+            <input type="text" id="first_name" name="first_name" required class="input-field">
+        </div>
+        <div class="form-group">
+            <label for="last_name">Last Name</label>
+            <input type="text" id="last_name" name="last_name" required class="input-field">
+        </div>
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required class="input-field">
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required class="input-field">
+        </div>
+        <div class="form-group">
+            <label for="role">Role</label>
+            <select id="role" name="role" class="input-field">
+            <option value="super_admin">Super Admin</option>
+            <option value="artist_manager">Artist Manager</option>
+            <option value="artist">Artist</option>
+            </select>
+        </div>
+        <button type="submit" class="submit-button">Register</button>
+        </form>
+        <p class="redirect-link">Already have an account? <a href="/login">Login</a></p>
+    </div>
+    <script src="/public/js/register.js"></script>
+</body>
+</html>
