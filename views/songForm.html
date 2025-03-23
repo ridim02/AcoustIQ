@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Insert Song Record</title>
+  <link rel="stylesheet" href="/public/css/form.css">
+</head>
+<body>
+  <h1>Insert Song Record</h1>
+  <form method="POST">
+    <label for="artist_id">Artist ID *</label>
+    <input type="number" id="artist_id" name="artist_id" required>
+    
+    <label for="title">Title *</label>
+    <input type="text" id="title" name="title" maxlength="255" required>
+    
+    <label for="album_name">Album Name *</label>
+    <input type="text" id="album_name" name="album_name" maxlength="255" required>
+    
+    <label for="genre">Genre *</label>
+    <select id="genre" name="genre" required>
+      <option value="">Select Genre</option>
+      <option value="rnb">R&B</option>
+      <option value="country">Country</option>
+      <option value="classic">Classic</option>
+      <option value="rock">Rock</option>
+      <option value="jazz">Jazz</option>
+    </select>
+    
+    <button type="submit">Insert Song</button>
+  </form>
+</body>
+</html>

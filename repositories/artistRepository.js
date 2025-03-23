@@ -2,11 +2,16 @@ const db = require('../db/db');
 
 // Basic CRUD operations for Artists
 
-async function listArtists(page = 1, limit = 10) {
+async function listArtists(page = 1, limit = 5) {
     const offset = (page - 1) * limit;
     const query = `SELECT * FROM artists ORDER BY id LIMIT $1 OFFSET $2`;
-    const { rows } = await db.query(query, [limit, offset]);
-    return rows;
+    const { rows: users } = await db.query(query, [limit, offset]);
+
+    const countQuery = 'SELECT COUNT(*) FROM artists';
+    const { rows: countResult } = await db.query(countQuery);
+    const totalUsers = parseInt(countResult[0].count, 10);
+    
+    return { users, totalUsers };
 }
 
 async function listArtistById(artistId) {
@@ -50,10 +55,5 @@ async function deleteArtist(id) {
 }
 
 module.exports = {
-    listArtists,
-    listArtistById,
-    listSongsByArtist,
-    createArtist,
-    updateArtist,
-    deleteArtist,
+    listArtists, listArtistById, listSongsByArtist, createArtist,updateArtist, deleteArtist,
 };

@@ -9,9 +9,15 @@ async function listSongsByArtist(artistId) {
 }
 
 async function listSongs() {
-    const query = `SELECT * FROM songs`;
-    const { rows } = await db.query(query, []);
-    return rows;
+    const offset = (page - 1) * limit;
+    const query = `SELECT * FROM songs ORDER BY id LIMIT $1 OFFSET $2`;
+    const { rows: songs } = await db.query(query, [limit, offset]);
+    console.log(songs);
+    const countQuery = 'SELECT COUNT(*) FROM songs';
+    const { rows: countResult } = await db.query(countQuery);
+    const totalSongs = parseInt(countResult[0].count, 10);
+    
+    return { songs, totalSongs };
 }
 
 async function createSong(data) {
@@ -42,9 +48,5 @@ async function deleteSong(id) {
 }
 
 module.exports = {
-    listSongsByArtist,
-    listSongs,
-    createSong,
-    updateSong,
-    deleteSong,
+    listSongsByArtist, listSongs, createSong, updateSong, deleteSong,
 };

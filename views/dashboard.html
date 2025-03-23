@@ -1,11 +1,78 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to acoustIQ!</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>acoustIQ Dashboard</title>
+  <link rel="stylesheet" href="/public/css/dashboard.css">
 </head>
 <body>
-    
+  <header class="header">
+    <div class="logo">acoustIQ</div>
+    <div class="search-bar">
+      <input type="text" placeholder="Search..." />
+    </div>
+    <button class="login-btn">Login</button>
+  </header>
+  <div class="container">
+    <aside class="sidebar">
+      <div class="menu-item" onclick="toggleSubmenu('usersmenu', this)">
+        Users <span>&#9660;</span>
+      </div>
+      <div class="submenu" id="usersmenu">
+        <a href="userForm">Create New User</a>
+        <a href="#">Delete Users</a>
+      </div>
+      <div class="menu-item" onclick="toggleSubmenu('artistsmenu', this)">
+        Artists <span>&#9660;</span>
+      </div>
+      <div class="submenu" id="artistsmenu">
+        <a href="artistForm">Create New Artist</a>
+        <a href="#">Delete Artists</a>
+      </div>
+    </aside>
+    <main class="main-content">
+      <h1>Dashboard</h1>
+      <p>Welcome to acoustIQ Dashboard. Manage your artists, songs, and settings here.</p>
+      <table id="songTable">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Title</th>
+            <th>Artist ID</th>
+            <th>Album Name</th>
+            <th>Genre</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div id="songTable-pagination"></div>
+      <table id="userTable">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Position</th>
+            <th>Salary</th>
+            <th>Hire Date</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div id="userTable-pagination"></div>
+      
+      <script>
+        document.addEventListener("DOMContentLoaded", () => {
+          fetchData("/songs", "songTable", ["id", "title", "artist_id", "album_name", "genre"]);
+        });
+        
+        document.addEventListener("DOMContentLoaded", () => {
+            fetchData("/users", "userTable", ["id", "name", "position", "salary", "hire_date"]);
+          });
+      </script>
+      
+    </main>
+  </div>
+  <script src="/public/js/dashboard.js"></script>
 </body>
 </html>

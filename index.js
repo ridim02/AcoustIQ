@@ -3,8 +3,11 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const url = require('url');
+const querystring = require('querystring');
 
 const authRepository = require('./repositories/authRepository');
+const userRepository = require('./repositories/userRepository');
+const songsRepository = require('./repositories/songsRepository');
 
 const PORT = process.env.PORT;
 
@@ -57,27 +60,59 @@ const server = http.createServer(async (req, res) => {
       }
       return serveStaticFile(res, path.join(__dirname, 'views', 'login.html'), 'text/html');
     }
-    if (parsedUrl.pathname === '/register') {
-      return serveStaticFile(res, path.join(__dirname, 'views', 'register.html'), 'text/html');
-    }
-    if (parsedUrl.pathname === '/dashboard') {
-        const cookies = {};
-        if(req.headers.cookie){
-            req.headers.cookie.split(';').forEach(cookie => {
-                const [key, value] = cookie.trim().split('=');
-                cookies[key] = decodeURIComponent(value);
-            });
-        }
-      
-        const token = cookies.token;
+    
+    const pages = {
+      '/register': 'register.html',
+      '/artistForm': 'artistForm.html',
+      '/songForm': 'songForm.html',
+      '/userForm': 'userForm.html',
+      '/dashboard': 'dashboard.html'
+    };
 
+    if (pages[parsedUrl.pathname]) {
+      const cookies = parseCookies(req.headers.cookie);
+      if (parsedUrl.pathname === '/dashboard' && cookies.token) {
         try {
-            await authRepository.verifyToken(token);
-            return serveStaticFile(res, path.join(__dirname, 'views', 'dashboard.html'), 'text/html');
+          await authRepository.verifyToken(cookies.token);
+          return serveStaticFile(res, path.join(__dirname, 'views', 'dashboard.html'), 'text/html');
         } catch {
-            res.writeHead(302, { Location: '/login' });
-            return res.end();
+          res.writeHead(302, { Location: '/login' });
+          return res.end();
         }
+      }
+      return serveStaticFile(res, path.join(__dirname, 'views', pages[parsedUrl.pathname]), 'text/html');
+    }
+
+    if (parsedUrl.pathname === '/users') {
+      const queryParams = querystring.parse(parsedUrl.query);
+      const page = parseInt(queryParams.page) || 1;
+      const limit = parseInt(queryParams.limit) || 5;
+      try {
+        const { users, totalUsers } = await userRepository.listUsers(page, limit);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        console.log("users:");
+        console.log(JSON.stringify({ users, totalUsers }));
+        res.end(JSON.stringify({ users, totalUsers }));
+      } catch (error) {
+        res.writeHead(500, { 'Content-Type': 'text/plain' });
+        res.end('Error occurred while fetching users');
+      }
+    }
+    
+    if (parsedUrl.pathname === '/songs') {
+      const queryParams = querystring.parse(parsedUrl.query);
+      const page = parseInt(queryParams.page) || 1;
+      const limit = parseInt(queryParams.limit) || 5;
+      try {
+        const { users, totalUsers } = await songsRepository.listSongs(page, limit);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        console.log("songs:");
+        console.log(JSON.stringify({ users, totalUsers }));
+        res.end(JSON.stringify({ users, totalUsers }));
+      } catch (error) {
+        res.writeHead(500, { 'Content-Type': 'text/plain' });
+        res.end('Error occurred while fetching users');
+      }
     }
 }
 

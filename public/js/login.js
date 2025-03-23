@@ -24,6 +24,7 @@ document.getElementById("loginForm").addEventListener("submit", async function (
 
             alert(`Logged in with user: ${userId} with role ${role}`);
             // document.cookie = `token=${data.token};`;
+            window.location.href = "dashboard";
         } else {
             alert(data.message || "Login failed.");
         }
