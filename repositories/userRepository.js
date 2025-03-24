@@ -3,25 +3,31 @@ const db = require('../db/db');
 // Basic CRUD operations for User
 
 async function listUsers(page = 1, limit = 5) {
-    const offset = (page - 1) * limit;
-    const query = `SELECT * FROM users ORDER BY id LIMIT $1 OFFSET $2`;
-    const { rows: users } = await db.query(query, [limit, offset]);
+    try {
+        const offset = (page - 1) * limit;
+        const query = `SELECT * FROM users ORDER BY id LIMIT $1 OFFSET $2`;
+        const { rows: users } = await db.query(query, [limit, offset]);
 
-    const countQuery = 'SELECT COUNT(*) FROM users';
-    const { rows: countResult } = await db.query(countQuery);
-    const totalUsers = parseInt(countResult[0].count, 10);
-    
-    return { users, totalUsers };
+        const countQuery = 'SELECT COUNT(*) FROM users';
+        const { rows: countResult } = await db.query(countQuery);
+        const totalUsers = parseInt(countResult[0].count, 10);
+
+        return { users, totalUsers };
+    } catch (error) {
+        console.error("Error while listing users:", error);
+        return { users: [], totalUsers: 0 };
+    }
 }
 
+
 async function createUser(data) {
-    const { first_name, last_name, email, password, role } = data;
+    const { first_name, last_name, email, password, role, phone, dob, gender, address } = data;
     const query = `
-        INSERT INTO users (first_name, last_name, email, password, role)
+        INSERT INTO users (first_name, last_name, email, password, role, phone, dob, gender, address)
         VALUES ($1, $2, $3, $4, $5)
         RETURNING id, email, role
     `;
-    const { rows } = await db.query(query, [first_name, last_name, email, password, role]);
+    const { rows } = await db.query(query, [first_name, last_name, email, password, role, phone, dob, gender, address]);
     return rows[0];
 }
 

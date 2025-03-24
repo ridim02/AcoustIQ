@@ -1,24 +1,27 @@
 const db = require('../db/db');
 
-// Basic CRUD operations for Songs
-
-async function listSongsByArtist(artistId) {
-    const query = `SELECT * FROM songs WHERE artist_id=$1 ORDER BY id`;
-    const { rows } = await db.query(query, [artistId]);
-    return rows;
-}
-
-async function listSongs() {
+async function listSongs(page, limit) {
     const offset = (page - 1) * limit;
-    const query = `SELECT * FROM songs ORDER BY id LIMIT $1 OFFSET $2`;
+    const query = `SELECT * FROM songs LEFT JOIN artists ON artists.id = songs.artist_id ORDER BY songs.id LIMIT $1 OFFSET $2`;
     const { rows: songs } = await db.query(query, [limit, offset]);
-    console.log(songs);
     const countQuery = 'SELECT COUNT(*) FROM songs';
     const { rows: countResult } = await db.query(countQuery);
     const totalSongs = parseInt(countResult[0].count, 10);
-    
     return { songs, totalSongs };
 }
+  
+async function listSongsByArtist(artistId, page = 1, limit = 5) {
+    const offset = (page - 1) * limit;
+    const query = `SELECT * FROM songs LEFT JOIN artists ON artists.id = songs.artist_id WHERE artist_id = $1 ORDER BY songs.id LIMIT $2 OFFSET $3`;
+    const { rows: songs } = await db.query(query, [artistId, limit, offset]);
+
+    const countQuery = `SELECT COUNT(*) FROM songs WHERE artist_id = $1`;
+    const { rows: countResult } = await db.query(countQuery, [artistId]);
+
+    const totalSongs = parseInt(countResult[0].count, 10);
+    return { songs, totalSongs };
+}
+  
 
 async function createSong(data) {
     const { artist_id, title, album_name, genre } = data;
