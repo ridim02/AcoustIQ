@@ -32,14 +32,21 @@ async function listSongsByArtist(artistId) {
 }
 
 async function createArtist(data) {
-    const { name, dob, gender, address, first_release_year, no_of_albums_released } = data;
-    const query = `
-        INSERT INTO artists (name, dob, gender, address, first_release_year, no_of_albums_released)
-        VALUES ($1, $2, $3, $4, $5, $6)
-        RETURNING *
-    `;
-    const { rows } = await db.query(query, [name, dob, gender, address, first_release_year, no_of_albums_released || 0]);
-    return rows[0];
+    try{
+        console.log("create artists samma pugyo");
+        data = JSON.parse(data);
+        const { name, dob, gender, address, first_release_year, no_of_albums_released } = data;
+        const query = `
+            INSERT INTO artists (name, dob, gender, address, first_release_year, no_of_albums_released)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING *
+        `;
+        const { rows } = await db.query(query, [name, dob, gender, address, first_release_year, no_of_albums_released || 0]);
+        return rows[0];
+    }
+    catch (error) {
+        console.error("Error while saving artists: " + error);
+    }
 }
 
 async function updateArtist(id, data) {

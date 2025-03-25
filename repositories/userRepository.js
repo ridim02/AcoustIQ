@@ -19,12 +19,11 @@ async function listUsers(page = 1, limit = 5) {
     }
 }
 
-
 async function createUser(data) {
     const { first_name, last_name, email, password, role, phone, dob, gender, address } = data;
     const query = `
         INSERT INTO users (first_name, last_name, email, password, role, phone, dob, gender, address)
-        VALUES ($1, $2, $3, $4, $5)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
         RETURNING id, email, role
     `;
     const { rows } = await db.query(query, [first_name, last_name, email, password, role, phone, dob, gender, address]);

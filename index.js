@@ -147,6 +147,16 @@ const server = http.createServer(async (req, res) => {
             }
             return;
         }
+
+        if(parsedUrl.pathname === '/logout'){
+          try{
+            res.writeHead(302, { 'Set-Cookie': 'token=; Max-Age=0', Location: '/login' });
+            return res.end();
+          }
+          catch (error){
+            console.log("Error logging out: " + error);
+          }
+        }
     }
 
     // Handle POST requests
@@ -180,6 +190,12 @@ const server = http.createServer(async (req, res) => {
                 if (req.url === '/logout') {
                     res.writeHead(302, { 'Set-Cookie': 'token=; Max-Age=0', Location: '/login' });
                     return res.end();
+                }
+
+                if(req.url === '/artists'){
+                  await artistRepository.createArtist(body);
+                  res.writeHead(302, { Location: '/login' });
+                  return res.end();
                 }
             } catch (error) {
                 res.writeHead(400, { 'Content-Type': 'text/plain' });

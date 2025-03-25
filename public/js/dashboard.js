@@ -45,6 +45,9 @@ async function fetchData(endpoint, tableId, columns, page = 1, limit = 5) {
         }
         return `<td>${item[col] || ''}</td>`;
       }).join('');
+      if (tableId === "artistsTable") {
+        row.innerHTML += `<td><button onclick="editArtist('${encrypt(item.id)}')">Edit</button></td>`;
+      }
       tableBody.appendChild(row);
     });
 
@@ -83,4 +86,13 @@ function encrypt(text) {
 
 function decrypt(text) {
   return atob(text);
+}
+
+
+function logout(){
+
+}
+
+function editArtist(encryptedArtistId) {
+  window.location.href = `artistForm.html?artistId=${encryptedArtistId}`;
 }

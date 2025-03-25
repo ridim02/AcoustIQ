@@ -47,18 +47,16 @@ document.addEventListener("DOMContentLoaded", () => {
             first_release_year: document.getElementById("first_release_year").value,
             no_of_albums_released: document.getElementById("no_of_albums_released").value || 0,
       };
-  
-      const method = encryptedId ? "PUT" : "POST";
-      const url = encryptedId ? `/artists/${decrypt(encryptedId)}` : "/artists";
-      
-      const response = await fetch(url, {
-            method,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(formData),
-      });
+      console.log(formData);
+      const url = "/artists";
+      const response = await fetch("/artists", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData)
+    });
   
       if (response.ok) {
-            window.location.href = "artists.html";
+            window.location.href = "dashboard";
       } else {
             console.error("Error submitting form");
       }
