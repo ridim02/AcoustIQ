@@ -48,6 +48,9 @@ async function fetchData(endpoint, tableId, columns, page = 1, limit = 5) {
       if (tableId === "artistsTable") {
         row.innerHTML += `<td><button onclick="editArtist('${encrypt(item.id)}')">Edit</button></td>`;
       }
+      if (tableId === "songsTable") {
+        row.innerHTML += `<td><button onclick="editSong('${encrypt(item.id)}')">Edit</button></td>`;
+      }
       tableBody.appendChild(row);
     });
 
@@ -89,10 +92,17 @@ function decrypt(text) {
 }
 
 
-function logout(){
-
+async function logout(){
+  const response = await fetch("/logout", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" }
+  });
 }
 
 function editArtist(encryptedArtistId) {
-  window.location.href = `artistForm.html?artistId=${encryptedArtistId}`;
+  window.location.href = `artistForm?artistId=${encryptedArtistId}`;
+}
+
+function editSong(encryptedSongId) {
+  window.location.href = `songForm?songId=${encryptedSongId}`;
 }

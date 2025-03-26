@@ -20,25 +20,37 @@ async function listUsers(page = 1, limit = 5) {
 }
 
 async function createUser(data) {
-    const { first_name, last_name, email, password, role, phone, dob, gender, address } = data;
-    const query = `
-        INSERT INTO users (first_name, last_name, email, password, role, phone, dob, gender, address)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        RETURNING id, email, role
-    `;
-    const { rows } = await db.query(query, [first_name, last_name, email, password, role, phone, dob, gender, address]);
-    return rows[0];
+    try{
+        data = JSON.parse(data);
+        const { first_name, last_name, email, password, role, phone, dob, gender, address } = data;
+        const query = `
+            INSERT INTO users (first_name, last_name, email, password, role, phone, dob, gender, address)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            RETURNING id, email, role
+        `;
+        const { rows } = await db.query(query, [first_name, last_name, email, password, role, phone, dob, gender, address]);
+        return rows[0];
+    }
+    catch (error){
+        console.error("Error while creating user: " + error);
+    }
 }
 
-async function updateUser(id, data) {
-    const { first_name, last_name, email, role } = data;
-    const query = `
-        UPDATE users SET first_name=$1, last_name=$2, email=$3, role=$4, updated_at=NOW()
-        WHERE id=$5 
-        RETURNING id, email, role
-    `;
-    const { rows } = await db.query(query, [first_name, last_name, email, role, id]);
-    return rows[0];
+async function updateUser(data) {
+    try {
+        data = JSON.parse(data);
+        const { id, first_name, last_name, email, role } = data;
+        const query = `
+            UPDATE users SET first_name=$1, last_name=$2, email=$3, role=$4, updated_at=NOW()
+            WHERE id=$5 
+            RETURNING id, email, role
+        `;
+        const { rows } = await db.query(query, [first_name, last_name, email, role, id]);
+        return rows[0];
+    }
+    catch (error) {
+        console.error("Error while updating user: " + error);
+    }
 }
 
 async function deleteUser(id) {

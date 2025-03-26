@@ -119,6 +119,7 @@ const server = http.createServer(async (req, res) => {
           
             try {
                 const { artists, totalArtists } = await artistRepository.listArtists(page, limit);
+
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ items: artists, totalItems: totalArtists }));
             } catch (error) {
@@ -128,9 +129,10 @@ const server = http.createServer(async (req, res) => {
         }
         
         if (parsedUrl.pathname === '/artistSongsById') {
+            const queryParams = new URLSearchParams(parsedUrl.query);
+            const artistId = queryParams.get("artistId");
+
             try {
-                const queryParams = new URLSearchParams(parsedUrl.query);
-                const artistId = queryParams.get("artistId");
                 if (!artistId) {
                     res.writeHead(400, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ message: 'Missing artistId parameter' }));
@@ -138,7 +140,9 @@ const server = http.createServer(async (req, res) => {
                 }
                 const page = parseInt(queryParams.get("page")) || 1;
                 const limit = parseInt(queryParams.get("limit")) || 5;
+
                 const { songs, totalSongs } = await songsRepository.listSongsByArtist(artistId, page, limit);
+
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ items: songs, totalItems: totalSongs }));
             } catch (error) {
@@ -147,7 +151,44 @@ const server = http.createServer(async (req, res) => {
             }
             return;
         }
+        
+        if (parsedUrl.pathname === '/listArtistById') {
+            try {
+                const queryParams = new URLSearchParams(parsedUrl.query);
+                const artistId = queryParams.get("artistId");
+                if (!artistId) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ message: 'Missing artistId parameter' }));
+                    return;
+                }
+                const { artists } = await artistRepository.listArtistById(artistId);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ items: artists }));
+            } catch (error) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ message: error.message }));
+            }
+            return;
+        }
 
+        if (parsedUrl.pathname === '/listSongById') {
+            try {
+                const queryParams = new URLSearchParams(parsedUrl.query);
+                const songId = queryParams.get("songId");
+                if (!songId) {
+                    res.writeHead(400, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ message: 'Missing songId parameter' }));
+                    return;
+                }
+                const { songs } = await songsRepository.listSongById(songId);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ items: songs }));
+            } catch (error) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ message: error.message }));
+            }
+            return;
+        }
         if(parsedUrl.pathname === '/logout'){
           try{
             res.writeHead(302, { 'Set-Cookie': 'token=; Max-Age=0', Location: '/login' });
@@ -157,6 +198,19 @@ const server = http.createServer(async (req, res) => {
             console.log("Error logging out: " + error);
           }
         }
+
+        if (parsedUrl.pathname === '/artistsList') {
+            try {
+                const { rows: artists } = await db.query('SELECT id, name FROM artists ORDER BY name');
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+              
+                return { artists }
+            } catch (error) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ message: 'Error fetching artists', error: error.message }));
+            }
+          }
+          
     }
 
     // Handle POST requests
@@ -176,11 +230,13 @@ const server = http.createServer(async (req, res) => {
                     try{
                         res.setHeader('Access-Control-Expose-Headers', 'Userid, Role');
                         res.writeHead(302, {
-                          'Set-Cookie': `token=${parsedResult.token}; HttpOnly; Secure; SameSite=Lax HttpOnly; Secure; SameSite=Lax`,
-                          Location: '/dashboard',
-                          'userid': parsedResult.user.id,
-                          'role': parsedResult.user.role
+                            'Set-Cookie': `token=${parsedResult.token}; HttpOnly; Secure; SameSite=Lax HttpOnly; Secure; SameSite=Lax`,
+                            Location: '/dashboard',
+                            'userid': parsedResult.user.id,
+                            'role': parsedResult.user.role
                         });
+                        alert(`Logged in with user: ${parsedResult.user.id} with role ${parsedResult.user.role}`);
+
                     }
                     catch(err){
                       console.log("Error while writing head: " + err);
@@ -193,9 +249,39 @@ const server = http.createServer(async (req, res) => {
                 }
 
                 if(req.url === '/artists'){
-                  await artistRepository.createArtist(body);
-                  res.writeHead(302, { Location: '/login' });
-                  return res.end();
+                    await artistRepository.createArtist(body);
+                    res.writeHead(302, { Location: '/dashboard' });
+                    return res.end();
+                }
+
+                if(req.url === '/updateArtist'){
+                    await artistRepository.updateArtist(body);
+                    res.writeHead(302, { Location: '/dashboard' });
+                    return res.end();
+                }
+
+                if(req.url === '/users'){
+                    await userRepository.createUser(body);
+                    res.writeHead(302, { Location: '/dashboard' });
+                    return res.end();
+                }
+
+                if(req.url === '/updateUser'){
+                    await userRepository.updateUser(body);
+                    res.writeHead(302, { Location: '/dashboard' });
+                    return res.end();
+                }
+
+                if(req.url === '/songs'){
+                    await songsRepository.createSong(body);
+                    res.writeHead(302, { Location: '/dashboard' });
+                    return res.end();
+                }
+
+                if(req.url === '/updateSong'){
+                    await songsRepository.updateSong(body);
+                    res.writeHead(302, { Location: '/dashboard' });
+                    return res.end();
                 }
             } catch (error) {
                 res.writeHead(400, { 'Content-Type': 'text/plain' });

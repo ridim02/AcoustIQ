@@ -9,8 +9,10 @@
 <body>
   <h1>Insert Song Record</h1>
   <form method="POST">
-    <label for="artist_id">Artist ID *</label>
-    <input type="number" id="artist_id" name="artist_id" required>
+    <label for="artist_id">Artist *</label>
+    <select id="artist_id" name="artist_id" required>
+      <option value="">Select an Artist</option>
+    </select>
     
     <label for="title">Title *</label>
     <input type="text" id="title" name="title" maxlength="255" required>

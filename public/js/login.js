@@ -15,15 +15,9 @@ document.getElementById("loginForm").addEventListener("submit", async function (
             headers: { "Content-Type": "application/json" },
             body: body,
         });
-        
         const data = await response;
         if (response.ok) {
-            const userId = response.headers.get('Userid');
-            const role = response.headers.get('Role');
-            console.log(userId, role);
-
-            alert(`Logged in with user: ${userId} with role ${role}`);
-            // document.cookie = `token=${data.token};`;
+            document.cookie = `token=${data.token};`;
             window.location.href = "dashboard";
         } else {
             alert(data.message || "Login failed.");

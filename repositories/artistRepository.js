@@ -4,25 +4,32 @@ const db = require('../db/db');
 
 async function listArtists(page = 1, limit = 5) {
     try {
-      const offset = (page - 1) * limit;
-      const query = `SELECT * FROM artists ORDER BY id LIMIT $1 OFFSET $2`;
-      const { rows: artists } = await db.query(query, [limit, offset]);
-  
-      const countQuery = 'SELECT COUNT(*) FROM artists';
-      const { rows: countResult } = await db.query(countQuery);
-      const totalArtists = parseInt(countResult[0].count, 10);
+        const offset = (page - 1) * limit;
+        
+        const query = `SELECT * FROM artists ORDER BY id LIMIT $1 OFFSET $2`;
+        const { rows: artists } = await db.query(query, [limit, offset]);
+    
+        const countQuery = 'SELECT COUNT(*) FROM artists';
+        const { rows: countResult } = await db.query(countQuery);
+        const totalArtists = parseInt(countResult[0].count, 10);
   
       return { artists, totalArtists };
-    } catch (error) {
-      console.error("Error while listing artists:", error);
-      return { artists: [], totalArtists: 0 };
+    } 
+    catch (error) {
+        console.error("Error while listing artists:", error);
+        return { artists: [], totalArtists: 0 };
     }
   }
 
 async function listArtistById(artistId) {
-    const query = `SELECT * FROM artists WHERE artist_id=$1`;
-    const { rows } = await db.query(query, [artistId]);
-    return rows;
+    try{
+        const query = `SELECT * FROM artists WHERE id=$1`;
+        const { rows: artists } = await db.query(query, [artistId]);
+        return { artists };
+    }
+    catch (error) {
+        console.error("Error while fetching artist by ID: " + error);
+    }
 }
 
 async function listSongsByArtist(artistId) {
@@ -33,7 +40,6 @@ async function listSongsByArtist(artistId) {
 
 async function createArtist(data) {
     try{
-        console.log("create artists samma pugyo");
         data = JSON.parse(data);
         const { name, dob, gender, address, first_release_year, no_of_albums_released } = data;
         const query = `
@@ -49,15 +55,23 @@ async function createArtist(data) {
     }
 }
 
-async function updateArtist(id, data) {
-    const { name, dob, gender, address, first_release_year, no_of_albums_released } = data;
-    const query = `
-        UPDATE artists SET name=$1, dob=$2, gender=$3, address=$4,
-        first_release_year=$5, no_of_albums_released=$6, updated_at=NOW()
-        WHERE id=$7 RETURNING *
-    `;
-    const { rows } = await db.query(query, [name, dob, gender, address, first_release_year, no_of_albums_released, id]);
-    return rows[0];
+async function updateArtist(data) {
+    try{
+        data = JSON.parse(data);
+        
+        const { id, name, dob, gender, address, first_release_year, no_of_albums_released } = data;
+        const query = `
+            UPDATE artists SET name=$1, dob=$2, gender=$3, address=$4,
+            first_release_year=$5, no_of_albums_released=$6, updated_at=NOW()
+            WHERE id=$7 RETURNING *
+        `;
+        
+        const { rows } = await db.query(query, [name, dob, gender, address, first_release_year, no_of_albums_released, id]);
+        return rows[0];
+    }
+    catch(error){
+        console.error("Error in updating artists: " + error);
+    }
 }
 
 async function deleteArtist(id) {
