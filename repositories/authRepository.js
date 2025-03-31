@@ -64,6 +64,36 @@ async function verifyToken(token) {
     });
 }
 
+function checkRole(requiredRoles) {
+    return async (req, res, next) => {
+        try {
+            const cookies = parseCookies(req);
+            if (!cookies.token) throw new Error("Unauthorized");
+
+            const decoded = await verifyToken(cookies.token);
+            if (!requiredRoles.includes(decoded.role)) {
+                res.writeHead(403, { "Content-Type": "application/json" });
+                return res.end(JSON.stringify({ error: "Forbidden: Access denied" }));
+            }
+
+            req.user = decoded;
+            next();
+        } catch (error) {
+            res.writeHead(401, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Unauthorized" }));
+        }
+    };
+}
+
+function parseCookies(req) {
+    const cookies = {};
+    req.headers.cookie?.split(";").forEach(cookie => {
+        const [name, value] = cookie.trim().split("=");
+        cookies[name] = decodeURIComponent(value);
+    });
+    return cookies;
+}
+
 module.exports = {
-  register, login, verifyToken,
+  register, login, verifyToken, checkRole
 };

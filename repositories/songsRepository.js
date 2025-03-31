@@ -4,7 +4,7 @@ async function listSongs(page, limit) {
     try {
         const offset = (page - 1) * limit;
         
-        const query = `SELECT * FROM songs LEFT JOIN artists ON artists.id = songs.artist_id ORDER BY songs.id LIMIT $1 OFFSET $2`;
+        const query = `SELECT songs.*, artists.name FROM songs LEFT JOIN artists ON artists.id = songs.artist_id ORDER BY songs.id LIMIT $1 OFFSET $2`;
         const { rows: songs } = await db.query(query, [limit, offset]);
         
         const countQuery = 'SELECT COUNT(*) FROM songs';
@@ -28,7 +28,24 @@ async function listSongById(songId) {
         console.error("Error while fetching song by ID: " + error);
     }
 }
-  
+
+async function listSongsUnderArtistManager(managerid, page = 1, limit = 5) {
+    try {
+        const offset = (page - 1) * limit;
+        const query = `SELECT * FROM songs LEFT JOIN artists ON artists.id = songs.artist_id WHERE artists.managed_by = $1 ORDER BY songs.id LIMIT $2 OFFSET $3`;
+        const { rows: songs } = await db.query(query, [managerid, limit, offset]);
+    
+        const countQuery = `SELECT COUNT(*) FROM songs LEFT JOIN artists ON artists.id = songs.artist_id WHERE artists.managed_by = $1`;
+        const { rows: countResult } = await db.query(countQuery, [artistId]);
+    
+        const totalSongs = parseInt(countResult[0].count, 10);
+        return { songs, totalSongs };
+    }
+    catch (error) {
+        console.error(`Erro while listing songs by artist under manager: ${artistId} - ${error}`);
+    }
+}
+
 async function listSongsByArtist(artistId, page = 1, limit = 5) {
     try {
         const offset = (page - 1) * limit;
@@ -66,12 +83,12 @@ async function createSong(data) {
 async function updateSong(data) {
     try {
         data = JSON.parse(data);
-        const { id, title, album_name, genre } = data;
+        const { id, artist_id, title, album_name, genre } = data;
         const query = `
-            UPDATE songs SET title=$1, album_name=$2, genre=$3, updated_at=NOW()
-            WHERE id=$4 RETURNING *
+            UPDATE songs SET title=$1, album_name=$2, genre=$3, updated_at=NOW(), artist_id=$4
+            WHERE id=$5 RETURNING *
         `;
-        const { rows } = await db.query(query, [title, album_name, genre, id]);
+        const { rows } = await db.query(query, [title, album_name, genre, artist_id, id]);
         return rows[0];
     }
     catch (error) {

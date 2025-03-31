@@ -8,17 +8,48 @@ function toggleSubmenu(id, element) {
   }
   
     window.addEventListener('DOMContentLoaded', () => {
-        const firstMenu = document.querySelector('.menu-item');
-        if (firstMenu) {
-        firstMenu.classList.add('active');
-        const onclickAttr = firstMenu.getAttribute('onclick');
-        const match = onclickAttr.match(/toggleSubmenu\('([^']+)'/);
-        if (match) {
-            const submenu = document.getElementById(match[1]);
-            if (submenu) submenu.classList.add('open');
-        }
-    }
-});  
+      const cookies = parseCookies(document.cookie);
+      const userId = atob(cookies.userid);
+      const role = atob(cookies.role);
+      configureTableVisibility(role);
+    
+      if (role === "super_admin") {
+        fetchData("/users", "usersTable", ["id", "first_name", "last_name", "email", "phone", "dob", "gender", "address", "role", "created_at"], 1, 5);
+        fetchData("/artists", "artistsTable", ["id", "name", "dob", "gender", "address", "first_release_year", "no_of_albums_released", "created_at"], 1, 5);
+        fetchData("/songs", "songsTable", ["id", "name", "title", "album_name", "genre", "created_at"], 1, 5);
+      } else if (role === "artist_manager") {
+        fetchData("/artists", "artistsTable", ["id", "name", "dob", "gender", "address", "first_release_year", "no_of_albums_released", "created_at"], 1, 5);
+        fetchData("/songs", "songsTable", ["id", "name", "title", "album_name", "genre", "created_at"], 1, 5);
+      } else if (role === "artist") {
+        fetchData("/songs", "songsTable", ["id", "name", "title", "album_name", "genre", "created_at"], 1, 5);
+      }
+    
+    });  
+
+function configureTableVisibility(role) {
+  const usersTableSection = document.getElementById("usersTable-container");
+  const artistsTableSection = document.getElementById("artistsTable-container");
+  const songsTableSection = document.getElementById("songsTable-container");
+
+  usersTableSection.style.display = "none";
+  artistsTableSection.style.display = "none";
+  songsTableSection.style.display = "none";
+
+  if (role === "super_admin") {
+    usersTableSection.style.display = "block";
+    artistsTableSection.style.display = "block";
+    songsTableSection.style.display = "block";
+  } else if (role === "artist_manager") {
+    artistsTableSection.style.display = "block";
+    songsTableSection.style.display = "block";
+  } else if (role === "artist") {
+    songsTableSection.style.display = "block";
+  } else {
+    alert("Unauthorized role. Redirecting to login...");
+    window.location.href = "/login";
+  }
+}
+
 
 async function fetchData(endpoint, tableId, columns, page = 1, limit = 5) {
   try {
@@ -106,3 +137,50 @@ function editArtist(encryptedArtistId) {
 function editSong(encryptedSongId) {
   window.location.href = `songForm?songId=${encryptedSongId}`;
 }
+
+function parseCookies(cookieHeader) {
+  const cookies = {};
+  if (cookieHeader) {
+      cookieHeader.split(';').forEach(cookie => {
+          const [key, value] = cookie.trim().split('=');
+          cookies[key] = decodeURIComponent(value);
+      });
+  }
+  return cookies;
+}
+
+document.getElementById("exportBtn").addEventListener("click", () => {
+  window.location.href = "/artists/export";
+});
+
+document.getElementById("importBtn").addEventListener("click", () => {
+  document.getElementById("csvFileInput").click();
+});
+
+document.getElementById("csvFileInput").addEventListener("change", async (event) => {
+  console.log("here");
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    const csvData = e.target.result;
+    console.log(csvData);
+    try {
+      const response = await fetch("/artists/import", {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" },
+        body: csvData
+      });
+      if (response.ok) {
+        alert("Artists imported successfully");
+      } else {
+        const errorData = await response.json();
+        alert("Error importing CSV: " + errorData.message);
+      }
+    } catch (error) {
+      console.error("Error uploading CSV file", error);
+      alert("Error uploading CSV file");
+    }
+  };
+  reader.readAsText(file);
+});

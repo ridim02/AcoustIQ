@@ -15,8 +15,8 @@ async function fetchSongData(id) {
     try {
         const response = await fetch(`/listSongById?songId=${id}`);
         const items = await response.json();
-        
-        document.getElementById("artist_id").value = items.items[0]["id"];
+        console.log(items.items[0]["artist_id"]);
+        document.getElementById("artist_id").value = items.items[0]["artist_id"];
         document.getElementById("title").value = items.items[0]["title"];
         document.getElementById("album_name").value = items.items[0]["album_name"];
         document.getElementById("genre").value = items.items[0]["genre"];
@@ -33,16 +33,17 @@ document.addEventListener("DOMContentLoaded", () => {
     var url = "";
     var songId = "";
     if (encryptedId) {
-      const songId = decrypt(encryptedId);
+      songId = decrypt(encryptedId);
       fetchSongData(songId);
       url = "/updateSong"
     }
     else url = "/songs"
-
+    console.log(url);
     songForm.addEventListener("submit", async (e) => {
         e.preventDefault();
         
         const formData = {
+            id: songId ?? null,
             artist_id: document.getElementById("artist_id").value,
             title: document.getElementById("title").value,
             album_name: document.getElementById("album_name").value,
@@ -67,11 +68,11 @@ async function fetchArtists() {
     try {
         const response = await fetch('/artistsList');
         const artists = await response.json();
-        
+
         const artistDropdown = document.getElementById("artist_id");
         artistDropdown.innerHTML = '<option value="">Select an Artist</option>';
 
-        artists.forEach(artist => {
+        artists.artists.forEach(artist => {
           const option = document.createElement("option");
           option.value = artist.id;
           option.textContent = artist.name;

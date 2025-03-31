@@ -34,7 +34,8 @@
     <main class="main-content">
       <h1>Dashboard</h1>
       <p>Welcome to acoustIQ Dashboard. Manage your artists, songs, and settings here.</p>
-      <div id="songTable-pagination"></div>
+      
+      <div id="usersTable-container">
       <h1>Users Table</h1>
       <table id="usersTable">
         <thead>
@@ -54,7 +55,9 @@
         <tbody></tbody>
       </table>
       <div id="usersTable-pagination"></div>
+      </div>
 
+      <div id="songsTable-container">
       <h1>Songs Table</h1>
       <table id="songsTable">
         <thead>
@@ -70,33 +73,40 @@
         <tbody></tbody>
       </table>
       <div id="songsTable-pagination"></div>
-
+      </div>
       
-      <h1>Artists Table</h1>
-      <table id="artistsTable">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>DOB</th>
-            <th>Gender</th>
-            <th>Address</th>
-            <th>First Release Year</th>
-            <th>No. of Albums</th>
-            <th>Created At</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-      <div id="artistsTable-pagination"></div>
+      <div id="artistsTable-container">
+        <h1>Artists Table</h1>
+        <div id="csv-controls" style="margin-bottom: 10px;">
+          <button id="exportBtn">Export CSV</button>
+          <input type="file" id="csvFileInput" accept=".csv" style="display: none;">
+          <button id="importBtn">Import CSV</button>
+        </div>
+        <table id="artistsTable">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>DOB</th>
+              <th>Gender</th>
+              <th>Address</th>
+              <th>First Release Year</th>
+              <th>No. of Albums</th>
+              <th>Created At</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <div id="artistsTable-pagination"></div>
+      </div>
 
-      <script>
+      <!-- <script>
         document.addEventListener("DOMContentLoaded", () => {
           fetchData("/songs", "songsTable", ["id", "name", "title", "album_name", "genre", "created_at"]);
           fetchData("/users", "usersTable", ["id", "first_name", "last_name", "email", "phone", "dob", "gender", "address", "role", "created_at"]);
           fetchData("/artists", "artistsTable", ["id", "name", "dob", "gender", "address", "first_release_year", "no_of_albums_released", "created_at"]);
         });
-      </script>
+      </script> -->
       
     </main>
   </div>

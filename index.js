@@ -4,6 +4,9 @@ const fs = require('fs');
 const path = require('path');
 const url = require('url');
 const querystring = require('querystring');
+const cookie = require("cookie");
+
+const db = require('./db/db');
 
 const authRepository = require('./repositories/authRepository');
 const userRepository = require('./repositories/userRepository');
@@ -65,18 +68,21 @@ const server = http.createServer(async (req, res) => {
             '/userForm': 'userForm.html',
             '/dashboard': 'dashboard.html',
             '/artistSongs' : 'artistSongs.html',
-            '/test' : 'test.html'
+            '/test' : 'test.html',
+            '/login' : 'login.html'
         };
 
         if (pages[parsedUrl.pathname]) {
             const cookies = parseCookies(req.headers.cookie);
-            if (parsedUrl.pathname === '/dashboard' && cookies.token) {
-                try {
-                    await authRepository.verifyToken(cookies.token);
-                    return serveStaticFile(res, path.join(__dirname, 'views', 'dashboard.html'), 'text/html');
-                } catch {
-                    res.writeHead(302, { Location: '/login' });
-                    return res.end();
+            if (parsedUrl.pathname === '/dashboard' ) {
+                if (cookies.token) {
+                    try {
+                        await authRepository.verifyToken(cookies.token);
+                        return serveStaticFile(res, path.join(__dirname, 'views', 'dashboard.html'), 'text/html');
+                    } catch {
+                        res.writeHead(302, { Location: '/login' });
+                        return res.end();
+                    }
                 }
             }
             return serveStaticFile(res, path.join(__dirname, 'views', pages[parsedUrl.pathname]), 'text/html');
@@ -101,9 +107,28 @@ const server = http.createServer(async (req, res) => {
             const queryParams = new URLSearchParams(parsedUrl.query);
             const page = parseInt(queryParams.get('page')) || 1;
             const limit = parseInt(queryParams.get('limit')) || 5;
-          
+            
+            const cookies = parseCookies(req.headers.cookie);
+            console.log(atob(cookies.role));
+            
+            const role = cookies.role;
+
+            // atob(text)
+            let songsData;
+
             try {
-                const { songs, totalSongs } = await songsRepository.listSongs(page, limit);
+                if (role === "artist") {
+                    songsData = await songsRepository.listSongsByArtist(id, page, limit);
+                }
+                else if (role === "artist_manager") {
+                    songsData = await songsRepository.listSongsUnderArtistManager(id, page, limit);
+                } 
+                else {
+                    songsData = await songsRepository.listSongs(page, limit);
+                }
+            
+                const { songs, totalSongs } = songsData;
+
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ items: songs, totalItems: totalSongs }));
             } catch (error) {
@@ -189,28 +214,52 @@ const server = http.createServer(async (req, res) => {
             }
             return;
         }
+
         if(parsedUrl.pathname === '/logout'){
-          try{
-            res.writeHead(302, { 'Set-Cookie': 'token=; Max-Age=0', Location: '/login' });
-            return res.end();
-          }
-          catch (error){
-            console.log("Error logging out: " + error);
-          }
+            const cookies = parseCookies(req.headers.cookie);
+            console.log(cookies);
         }
 
         if (parsedUrl.pathname === '/artistsList') {
             try {
+                debugger;
                 const { rows: artists } = await db.query('SELECT id, name FROM artists ORDER BY name');
                 res.writeHead(200, { 'Content-Type': 'application/json' });
               
-                return { artists }
+                res.end(JSON.stringify({ artists }));
             } catch (error) {
                 res.writeHead(500, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ message: 'Error fetching artists', error: error.message }));
             }
-          }
-          
+        }
+
+        if (parsedUrl.pathname === '/managersList') {
+            try {
+                const { rows: managers } = await db.query("select id, first_name || ' ' || last_name as name from users where role = 'artist_manager';");
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+              
+                return { managers }
+            } catch (error) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ message: 'Error fetching artists', error: error.message }));
+            }
+        }  
+
+        if (parsedUrl.pathname === '/artists/export') {
+            const { rows: artists } = await db.query('SELECT name, dob, gender, address, first_release_year, no_of_albums_released FROM artists ORDER BY id');
+            const header = "name,dob,gender,address,first_release_year,no_of_albums_released";
+            const csvRows = artists.map(artist => {
+            const dob = artist.dob ? artist.dob.toISOString().split('T')[0] : "";
+            return [artist.name, dob, artist.gender || "", artist.address || "", artist.first_release_year || "", artist.no_of_albums_released || 0].join(",");
+            });
+            const csvData = header + "\n" + csvRows.join("\n");
+            res.writeHead(200, {
+                "Content-Type": "text/csv",
+                "Content-Disposition": "attachment; filename=artists.csv"
+            });
+            res.end(csvData);
+
+        }
     }
 
     // Handle POST requests
@@ -219,6 +268,32 @@ const server = http.createServer(async (req, res) => {
         req.on('data', chunk => (body += chunk));
         req.on('end', async () => {
             try {
+                if (req.url === '/artists/import') {
+                    const lines = body.split("\n").map(line => line.trim()).filter(line => line);
+                    if (lines.length < 2) {
+                        res.writeHead(400, { "Content-Type": "application/json" });
+                        return res.end(JSON.stringify({ message: "CSV data is empty or missing header" }));
+                    }
+                    const header = lines[0].split(",").map(h => h.trim());
+                    const requiredColumns = ["name", "dob", "gender", "address", "first_release_year", "no_of_albums_released"];
+                    for (const col of requiredColumns) {
+                        if (!header.includes(col)) {
+                        res.writeHead(400, { "Content-Type": "application/json" });
+                        return res.end(JSON.stringify({ message: `Missing required column: ${col}` }));
+                        }
+                    }
+                    for (let i = 1; i < lines.length; i++) {
+                        const values = lines[i].split(",").map(v => v.trim());
+                        const artistData = {};
+                        header.forEach((col, idx) => { artistData[col] = values[idx]; });
+
+                        console.log(JSON.stringify(artistData));
+                        await artistRepository.createArtist(JSON.stringify(artistData));
+                    }
+                    res.writeHead(200, { "Content-Type": "application/json" });
+                    res.end(JSON.stringify({ message: "Artists imported successfully" }));
+                }
+
                 if (req.url === '/register') {
                     await authRepository.register(body);
                     res.writeHead(302, { Location: '/login' });
@@ -228,23 +303,40 @@ const server = http.createServer(async (req, res) => {
                     const result = await authRepository.login(body);
                     const parsedResult = JSON.parse(result);
                     try{
-                        res.setHeader('Access-Control-Expose-Headers', 'Userid, Role');
-                        res.writeHead(302, {
-                            'Set-Cookie': `token=${parsedResult.token}; HttpOnly; Secure; SameSite=Lax HttpOnly; Secure; SameSite=Lax`,
-                            Location: '/dashboard',
-                            'userid': parsedResult.user.id,
-                            'role': parsedResult.user.role
-                        });
-                        alert(`Logged in with user: ${parsedResult.user.id} with role ${parsedResult.user.role}`);
-
+                        if(parsedResult.error) {
+                            res.writeHead(200, { 'Content-Type': 'application/json' });
+                            return res.end(JSON.stringify({ message: parsedResult.error }));
+                        }
+                            res.writeHead(200, {
+                                "Content-Type": "application/json",
+                                "Set-Cookie": [
+                                    `token=${parsedResult.token};`,
+                                    `userid=${encrypt(parsedResult.user.id)};`,
+                                    `role=${encrypt(parsedResult.user.role)};`
+                                ]
+                            });
+                        res.end(JSON.stringify({
+                            token: parsedResult.token,
+                            user: {
+                                id: parsedResult.user.id,
+                                role: parsedResult.user.role
+                            }
+                        }));
                     }
-                    catch(err){
-                      console.log("Error while writing head: " + err);
+                    catch (error){
+                      console.log("Error while writing head: " + error);
                     }
                     return res.end();
                 }
                 if (req.url === '/logout') {
-                    res.writeHead(302, { 'Set-Cookie': 'token=; Max-Age=0', Location: '/login' });
+                    res.writeHead(302, { 
+                        "Set-Cookie": [
+                            "token=; Max-Age=0; HttpOnly; Secure; SameSite=Lax",
+                            "userid=; Max-Age=0; HttpOnly; Secure; SameSite=Lax",
+                            "role=; Max-Age=0; HttpOnly; Secure; SameSite=Lax"
+                        ],
+                        "Location": "/login"
+                    });
                     return res.end();
                 }
 
@@ -279,6 +371,7 @@ const server = http.createServer(async (req, res) => {
                 }
 
                 if(req.url === '/updateSong'){
+                    console.log(body);
                     await songsRepository.updateSong(body);
                     res.writeHead(302, { Location: '/dashboard' });
                     return res.end();
@@ -290,6 +383,14 @@ const server = http.createServer(async (req, res) => {
         });
     }
 });
+
+function encrypt(text) {
+    return btoa(text.toString());
+}
+  
+function decrypt(text) {
+    return atob(text);
+}
 
 server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);

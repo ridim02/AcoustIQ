@@ -15,9 +15,15 @@ document.getElementById("loginForm").addEventListener("submit", async function (
             headers: { "Content-Type": "application/json" },
             body: body,
         });
+        
         const data = await response;
         if (response.ok) {
-            document.cookie = `token=${data.token};`;
+            const cookies = parseCookies(document.cookie);
+            const userId = atob(cookies.userid);
+            const role = atob(cookies.role);
+            
+            alert(`Logged in with user: ${userId} with role ${role}`);
+            // document.cookie = `token=${data.token};`;
             window.location.href = "dashboard";
         } else {
             alert(data.message || "Login failed.");
@@ -27,3 +33,14 @@ document.getElementById("loginForm").addEventListener("submit", async function (
         alert("Login failed. Please try again.");
     }
 });  
+
+function parseCookies(cookieHeader) {
+    const cookies = {};
+    if (cookieHeader) {
+        cookieHeader.split(';').forEach(cookie => {
+            const [key, value] = cookie.trim().split('=');
+            cookies[key] = decodeURIComponent(value);
+        });
+    }
+    return cookies;
+}
