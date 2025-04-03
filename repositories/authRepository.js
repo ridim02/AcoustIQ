@@ -9,7 +9,7 @@ const SALT_ROUNDS = parseInt(process.env.SALT_ROUNDS) || 10;
 async function register(data) {
     try {
         data = JSON.parse(data);
-        console.log(data);
+        
         const { first_name, last_name, email, password, role } = data;
         if (!password) throw new Error("Password is required");
 

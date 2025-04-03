@@ -34,15 +34,15 @@ async function listSongsUnderArtistManager(managerid, page = 1, limit = 5) {
         const offset = (page - 1) * limit;
         const query = `SELECT * FROM songs LEFT JOIN artists ON artists.id = songs.artist_id WHERE artists.managed_by = $1 ORDER BY songs.id LIMIT $2 OFFSET $3`;
         const { rows: songs } = await db.query(query, [managerid, limit, offset]);
-    
+
         const countQuery = `SELECT COUNT(*) FROM songs LEFT JOIN artists ON artists.id = songs.artist_id WHERE artists.managed_by = $1`;
-        const { rows: countResult } = await db.query(countQuery, [artistId]);
+        const { rows: countResult } = await db.query(countQuery, [managerid]);
     
         const totalSongs = parseInt(countResult[0].count, 10);
         return { songs, totalSongs };
     }
     catch (error) {
-        console.error(`Erro while listing songs by artist under manager: ${artistId} - ${error}`);
+        console.error(`Erro while listing songs by artist under manager: ${managerid} - ${error}`);
     }
 }
 
@@ -103,5 +103,5 @@ async function deleteSong(id) {
 }
 
 module.exports = {
-    listSongsByArtist, listSongById, listSongs, createSong, updateSong, deleteSong,
+    listSongsByArtist, listSongById, listSongs, createSong, updateSong, deleteSong, listSongsUnderArtistManager
 };

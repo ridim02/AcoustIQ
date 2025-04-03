@@ -31,17 +31,25 @@ function configureTableVisibility(role) {
   const artistsTableSection = document.getElementById("artistsTable-container");
   const songsTableSection = document.getElementById("songsTable-container");
 
+  const usersmenu = document.getElementById("usersmenu");
+  const artistsmenu = document.getElementById("artistsmenu");
+
   usersTableSection.style.display = "none";
   artistsTableSection.style.display = "none";
   songsTableSection.style.display = "none";
-
+  usersmenu.style.display = "none";
+  artistsmenu.style.display = "none";
+  
   if (role === "super_admin") {
     usersTableSection.style.display = "block";
     artistsTableSection.style.display = "block";
     songsTableSection.style.display = "block";
+    usersmenu.style.display = "block";
+    artistsmenu.style.display = "block";
   } else if (role === "artist_manager") {
     artistsTableSection.style.display = "block";
     songsTableSection.style.display = "block";
+    artistsmenu.style.display = "block";
   } else if (role === "artist") {
     songsTableSection.style.display = "block";
   } else {
@@ -128,6 +136,7 @@ async function logout(){
     method: "POST",
     headers: { "Content-Type": "application/json" }
   });
+  window.location.href = 'login';
 }
 
 function editArtist(encryptedArtistId) {
@@ -158,13 +167,11 @@ document.getElementById("importBtn").addEventListener("click", () => {
 });
 
 document.getElementById("csvFileInput").addEventListener("change", async (event) => {
-  console.log("here");
   const file = event.target.files[0];
   if (!file) return;
   const reader = new FileReader();
   reader.onload = async function(e) {
     const csvData = e.target.result;
-    console.log(csvData);
     try {
       const response = await fetch("/artists/import", {
         method: "POST",

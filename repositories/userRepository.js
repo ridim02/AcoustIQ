@@ -1,4 +1,8 @@
 const db = require('../db/db');
+const bcrypt = require('bcrypt');
+
+const JWT_SECRET = process.env.JWT_SECRET;
+const SALT_ROUNDS = parseInt(process.env.SALT_ROUNDS) || 10;
 
 // Basic CRUD operations for User
 
@@ -22,13 +26,16 @@ async function listUsers(page = 1, limit = 5) {
 async function createUser(data) {
     try{
         data = JSON.parse(data);
+        
         const { first_name, last_name, email, password, role, phone, dob, gender, address } = data;
+        if (!password) throw new Error("Password is required");
+        const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
         const query = `
             INSERT INTO users (first_name, last_name, email, password, role, phone, dob, gender, address)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             RETURNING id, email, role
         `;
-        const { rows } = await db.query(query, [first_name, last_name, email, password, role, phone, dob, gender, address]);
+        const { rows } = await db.query(query, [first_name, last_name, email, hashedPassword, role, phone, dob, gender, address]);
         return rows[0];
     }
     catch (error){
@@ -57,6 +64,10 @@ async function deleteUser(id) {
     const query = `DELETE FROM users WHERE id = $1`;
     await db.query(query, [id]);
     return true;
+}
+
+async function listManagaers() {
+
 }
 
 module.exports = {

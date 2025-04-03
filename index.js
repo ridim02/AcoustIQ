@@ -61,15 +61,25 @@ const server = http.createServer(async (req, res) => {
             return serveStaticFile(res, path.join(__dirname, 'views', 'login.html'), 'text/html');
         }
 
+        if (['/dashboard'].includes(parsedUrl.pathname)) {
+            const cookies = parseCookies(req.headers.cookie);
+            if (!cookies.token) {
+                try {
+                    res.writeHead(302, { Location: '/login' });
+                    return res.end();
+                } catch { }
+            }
+            return serveStaticFile(res, path.join(__dirname, 'views', 'dashboard.html'), 'text/html');
+        }
+
         const pages = {
-            '/register': 'register.html',
             '/artistForm': 'artistForm.html',
             '/songForm': 'songForm.html',
             '/userForm': 'userForm.html',
-            '/dashboard': 'dashboard.html',
             '/artistSongs' : 'artistSongs.html',
             '/test' : 'test.html',
-            '/login' : 'login.html'
+            '/login' : 'login.html',
+            '/forbidden' : 'forbidden.html'
         };
 
         if (pages[parsedUrl.pathname]) {
@@ -109,13 +119,11 @@ const server = http.createServer(async (req, res) => {
             const limit = parseInt(queryParams.get('limit')) || 5;
             
             const cookies = parseCookies(req.headers.cookie);
-            console.log(atob(cookies.role));
+
+            const role = atob(cookies.role);
+            const id = atob(cookies.userid);
             
-            const role = cookies.role;
-
-            // atob(text)
             let songsData;
-
             try {
                 if (role === "artist") {
                     songsData = await songsRepository.listSongsByArtist(id, page, limit);
@@ -128,10 +136,11 @@ const server = http.createServer(async (req, res) => {
                 }
             
                 const { songs, totalSongs } = songsData;
-
+                
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ items: songs, totalItems: totalSongs }));
             } catch (error) {
+                console.error(error);
                 res.writeHead(500, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ message: 'Error fetching songs', error: error.message }));
             }
@@ -142,8 +151,25 @@ const server = http.createServer(async (req, res) => {
             const page = parseInt(queryParams.get('page')) || 1;
             const limit = parseInt(queryParams.get('limit')) || 5;
           
+            const cookies = parseCookies(req.headers.cookie);
+
+            const role = atob(cookies.role);
+            const id = atob(cookies.userid);
+
+            let artistsData;
+            
             try {
-                const { artists, totalArtists } = await artistRepository.listArtists(page, limit);
+                if (role === "artist_manager") {
+                    artistsData = await artistRepository.listArtistsUnderArtistManager(id, page, limit);
+                } 
+                else if (role === "super_admin") {
+                    artistsData = await artistRepository.listArtists(page, limit);
+                }
+                else {
+                    artistsData = null;
+                }
+
+                const { artists, totalArtists } = artistsData;
 
                 res.writeHead(200, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ items: artists, totalItems: totalArtists }));
@@ -152,7 +178,7 @@ const server = http.createServer(async (req, res) => {
                 res.end(JSON.stringify({ message: 'Error fetching artists', error: error.message }));
             }
         }
-        
+
         if (parsedUrl.pathname === '/artistSongsById') {
             const queryParams = new URLSearchParams(parsedUrl.query);
             const artistId = queryParams.get("artistId");
@@ -213,12 +239,7 @@ const server = http.createServer(async (req, res) => {
                 res.end(JSON.stringify({ message: error.message }));
             }
             return;
-        }
-
-        if(parsedUrl.pathname === '/logout'){
-            const cookies = parseCookies(req.headers.cookie);
-            console.log(cookies);
-        }
+        }   
 
         if (parsedUrl.pathname === '/artistsList') {
             try {
@@ -238,12 +259,24 @@ const server = http.createServer(async (req, res) => {
                 const { rows: managers } = await db.query("select id, first_name || ' ' || last_name as name from users where role = 'artist_manager';");
                 res.writeHead(200, { 'Content-Type': 'application/json' });
               
-                return { managers }
+                res.end(JSON.stringify({ managers }));
             } catch (error) {
                 res.writeHead(500, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({ message: 'Error fetching artists', error: error.message }));
             }
         }  
+
+        if (parsedUrl.pathname === '/usersList') {
+            try {
+                const { rows: users } = await db.query("select id, first_name || ' ' || last_name as name from users where role = 'artist';");
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+              
+                res.end(JSON.stringify({ users }));
+            } catch (error) {
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ message: 'Error fetching artists', error: error.message }));
+            }
+        }
 
         if (parsedUrl.pathname === '/artists/export') {
             const { rows: artists } = await db.query('SELECT name, dob, gender, address, first_release_year, no_of_albums_released FROM artists ORDER BY id');
@@ -287,7 +320,6 @@ const server = http.createServer(async (req, res) => {
                         const artistData = {};
                         header.forEach((col, idx) => { artistData[col] = values[idx]; });
 
-                        console.log(JSON.stringify(artistData));
                         await artistRepository.createArtist(JSON.stringify(artistData));
                     }
                     res.writeHead(200, { "Content-Type": "application/json" });
@@ -371,7 +403,6 @@ const server = http.createServer(async (req, res) => {
                 }
 
                 if(req.url === '/updateSong'){
-                    console.log(body);
                     await songsRepository.updateSong(body);
                     res.writeHead(302, { Location: '/dashboard' });
                     return res.end();
